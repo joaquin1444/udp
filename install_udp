@@ -1,0 +1,101 @@
+#!/bin/bash
+
+dir_user="/etc/adm-lite/userDIR"
+
+pausa(){
+  echo -ne "\033[1;37m"
+  read -p "Presiona Enter para Continuar"
+  echo -e "\e[0m"  # Restablece el color después de la pausa
+}
+
+info() {
+  puerto=$1
+  echo -e "\e[1;33m         INSTALADOR UDPserver | DEALER Dev"
+  echo -e "\e[1;36m         SOURCE OFICIAL DE Epro Dev Team"
+  echo -e "             https://t.me/ePro_Dev_Team"
+  echo -e "\e[1;35m         CODIGO REFACTORIZADO POR DEALER Dev\e[0m"
+  [[ -z ${puerto} ]] || add.user ${puerto}
+  pausa
+  clear
+}
+
+[[ ! -d /etc/udp ]] && mkdir -p /etc/udp
+
+make_service(){
+  cat <<EOF > /etc/systemd/system/udp-custom.service
+[Unit]
+Description=udp-custom by ePro Dev. Team
+
+[Service]
+User=root
+Type=simple
+ExecStart=/bin/UDP-Custom server --config /etc/udp/config.json
+WorkingDirectory=/etc/udp/
+Restart=always
+RestartSec=2s
+
+[Install]
+WantedBy=default.target
+EOF
+
+  systemctl daemon-reload
+  systemctl start udp-custom
+  systemctl enable udp-custom
+  systemctl start udp-custom
+}
+
+download_udpServer(){
+  echo -e "\e[1;34mDescargando binario UDPserver V 1.2"
+  wget -O /bin/UDP-Custom 'https://raw.githubusercontent.com/joaquin1444/udp/main/udp-amd64.bin' -q --show-progress
+  chmod +x /bin/UDP-Custom
+  echo -e "\e[1;32mDescarga y configuración del binario completada\e[0m"
+
+  echo -e "\e[1;34mDescargando Config UDPserver"
+  wget -O /etc/udp/config.json 'https://raw.githubusercontent.com/joaquin1444/udp/main/config.json' -q --show-progress
+  chmod 644 /etc/udp/config.json
+  echo -e "\e[1;32mDescarga y configuración del archivo de configuración completada\e[0m"
+
+  make_service
+}
+
+remove(){
+  echo "Removiendo UDPserver..."
+  systemctl stop udp-custom
+  systemctl disable udp-custom
+  rm /bin/UDP-Custom
+  rm /etc/udp/config.json
+  rm /etc/systemd/system/udp-custom.service
+  systemctl daemon-reload
+  echo "Servicio y archivos de UDPserver removidos correctamente."
+  pausa
+}
+
+while : 
+do
+  clear
+  echo -e "\e[0m\e[1;33m      BINARIO OFICIAL DE Epro Dev Team 1.2"
+  echo -e "\e[0m\e[1;34m         INSTALADOR UDPserver | DEALER Dev MOD"
+  service_status=$(systemctl is-active udp-custom)
+  if [[ "$service_status" == "active" ]]; then
+    status_color="\e[1;32m[ ON ]\e[0m"  # Verde para activo
+  else
+    status_color="\e[1;31m[ OFF ]\e[0m"  # Rojo para inactivo
+  fi
+echo -e "\e[1;32m  [1] Instalar UDPserver\e[0m $status_color"
+echo -e "\e[1;32m  [2] Reiniciar UDPserver\e[0m"
+echo -e "\e[1;32m  [3] Detener UDPserver\e[0m"
+echo -e "\e[1;32m  [4] Remover UDPserver\e[0m"
+echo -e "\e[1;32m  [5] Info de Proyecto\e[0m"
+echo -e "\e[1;32m  [0] Volver\e[0m"
+
+  read opcion
+  case $opcion in
+    1)download_udpServer;;
+    2)systemctl restart udp-custom; echo "UDPserver reiniciado."; pausa;;
+    3)systemctl stop udp-custom; echo "UDPserver detenido."; pausa;;
+    4)remove;;
+    5)info;;
+    0)exit;;
+    *) echo -e "\e[1;31mOpción no válida.\e[0m"; pausa;;
+  esac
+done
